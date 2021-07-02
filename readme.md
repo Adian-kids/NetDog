@@ -18,9 +18,6 @@ Server Option List
      -f /file  set recieve file location(Optional)
      
 Util Option List
-     -scan        check the remote port status
-     	-h        set target ip
-     	-p        set target port(format:[1-200],[1,2,3,11])
      -shell       get the system shell
 
 

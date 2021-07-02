@@ -27,10 +27,11 @@ class Client(object):
             address = (self.host, self.port)
             self.nd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.nd_socket.connect(address)
+            print('[INFO]Connected!')
         except:
-            print("[ERROR]Connect Error")
+            print("[ERROR]Connect field")
             self.disconnect()
-            exit(0)
+            sys.exit(0)
         if self.file_send == "None":
 
             # create 2 threads to use full duplex transmission
@@ -51,7 +52,7 @@ class Client(object):
             message_recieve = str(self.nd_socket.recv(1024), 'utf-8')
             if message_recieve == b"" or message_recieve == "":
                 print("[INFO]Remote disconnect")
-                exit(0)
+                sys.exit(0)
             print("[Message][Remote]" + message_recieve)
 
     def send_file(self):
@@ -65,7 +66,7 @@ class Client(object):
         except IOError:
             print("[ERROR] File Error,Please Check")
             self.disconnect()
-            exit(0)
+            sys.exit(0)
 
     def disconnect(self):
         self.nd_socket.close()
@@ -83,41 +84,53 @@ class Server(object):
         self.listen()
 
     def listen(self):
+        self.user_list = []
         # create a socket listener
         print("[INFO]NetDog listener is listening")
         nd_address = ('localhost', self.port)
         self.nd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.nd_socket.bind(nd_address)
         # listen and set max listen num
-        self.nd_socket.listen(5)
-        self.conn, self.addr = self.nd_socket.accept()
-        if self.file_recv == "None" and self.shell == False:
-            # create 2 threads to use full duplex transmission
-            send_thread = threading.Thread(target=self.send_message)
-            recv_thread = threading.Thread(target=self.accept_message)
-            send_thread.start()
-            recv_thread.start()
-        elif self.file_recv != "None":
-            # recv file
-            print("[INFO]waiting for file")
-            self.accept_file()
-        else:
-            self.shell_mode()
+        while True:
+            self.nd_socket.listen()
+            conn, addr = self.nd_socket.accept()
+            if addr not in self.user_list:
+                self.user_list.append(addr)
+            print("[Connect]Client Connect")
+            if self.file_recv == "None" and self.shell == False:
+                # create 2 threads to use full duplex transmission
+                send_thread = threading.Thread(target=self.send_message,
+                                               args=(conn, ))
+                recv_thread = threading.Thread(target=self.accept_message,
+                                               args=(
+                                                   conn,
+                                                   addr,
+                                               ))
+                send_thread.start()
+                recv_thread.start()
+            elif self.file_recv != "None":
+                # recv file
+                print("[INFO]waiting for file")
+                self.accept_file()
+            else:
+                self.shell_mode()
 
-    def send_message(self):
+    def send_message(self, conn):
         # send message
         while True:
             message_send = input().encode('utf-8')
-            self.conn.send(message_send)
+            for addr in self.user_list:
+                print(addr)
+                conn.sendto(message_send,addr)
 
-    def accept_message(self):
+    def accept_message(self, conn, addr):
         #recieve message
         while True:
-            message_recieve = str(self.conn.recv(1024), 'utf-8')
+            message_recieve = str(conn.recv(1024), 'utf-8')
             if message_recieve == b"" or message_recieve == "":
                 print("[INFO]Remote disconnect")
-                exit(0)
-            print("[Message][%s]%s" % (self.addr, message_recieve))
+                sys.exit(0)
+            print("[Message][%s]%s" % (addr, message_recieve))
 
     def accept_file(self):
         # recieve and write files
@@ -161,9 +174,6 @@ class Utils(object):
             -f /file  set recieve file location(Optional)
         
         Util Option List
-            -scan        check the remote port status
-                -h        set target ip
-                -p        set target port(format:[1-200],[1,2,3,11])
             -shell       get the system shell
 
 
