@@ -22,7 +22,6 @@ class Client(object):
 
     def connect(self):
         # connect to server
-
         try:
             address = (self.host, self.port)
             self.nd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,7 +120,7 @@ class Server(object):
     def send_message(self, conn, addr):
         # send message
         while True:
-            message_send = input("Send to " + addr).encode('utf-8')
+            message_send = input("Send to " + str(addr)) + ">>".encode('utf-8')
             conn.sendto(message_send, addr)
 
     def accept_message(self, conn, addr):
