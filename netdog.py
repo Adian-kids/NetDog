@@ -100,7 +100,10 @@ class Server(object):
             if self.file_recv == "None" and self.shell == False:
                 # create 2 threads to use full duplex transmission
                 send_thread = threading.Thread(target=self.send_message,
-                                               args=(conn, ))
+                                               args=(
+                                                   conn,
+                                                   addr,
+                                               ))
                 recv_thread = threading.Thread(target=self.accept_message,
                                                args=(
                                                    conn,
@@ -115,13 +118,11 @@ class Server(object):
             else:
                 self.shell_mode()
 
-    def send_message(self, conn):
+    def send_message(self, conn, addr):
         # send message
         while True:
-            message_send = input().encode('utf-8')
-            for addr in self.user_list:
-                print(addr)
-                conn.sendto(message_send,addr)
+            message_send = input("Send to " + addr).encode('utf-8')
+            conn.sendto(message_send, addr)
 
     def accept_message(self, conn, addr):
         #recieve message
